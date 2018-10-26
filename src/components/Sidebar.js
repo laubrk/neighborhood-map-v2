@@ -71,12 +71,14 @@ class Sidebar extends Component {
   render() {
     
     let navBarStyle = {width:this.state.menuOpen ? "325px" : "0"}
+    let navClassName = this.state.menuOpen ? "fa fa-bars" : "fa fa-close"
+    
     return (
       <div>
           <header className ="navbar">
             <div id = "navbar-text">Neighborhood Breweries
               <i
-                className = "fa fa-bars"
+                className = {navClassName}
                 aria-label="hide venues"
                 role="button"
                 aria-pressed="false"
