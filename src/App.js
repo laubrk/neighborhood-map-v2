@@ -11,6 +11,7 @@ class App extends Component {
       locationNames: [],
       locationPhotos:[],
       fourSquareReady: false,
+      fourSquarePhotosReady: false, //new
       markers: [],
       infoWindows:[],
       menuOpen: true
@@ -23,12 +24,30 @@ class App extends Component {
     //this.foursquarePhotos() //coded out for later work
   }
   
+  
   //only after component updated and foursquare locations obtained, based on state change, create the map
   componentDidUpdate(prevProps,prevState) {
-    if (prevProps.fourSquareReady !==this.state.fourSquareReady){
+    if (prevState.fourSquareReady !==this.state.fourSquareReady){
       this.initMap()
+      this.foursquarePhotos()
+    }
+  
+  /*  
+    if (prevState.fourSquarePhotosReady !==this.state.fourSquarePhotosReady){
+      this.initMap()
+      //this.foursquarePhotos()
+  }
+  */
+  }
+  
+  /*
+  componentDidUpdate(prevProps,prevState) {
+    if (prevProps.fourSquarePhotosReady !==this.state.fourSquarePhotosReady){
+      this.initMap()
+      //this.foursquarePhotos()
     }
   }
+  */
   
   //call foursquare api using axios and get locations
   //when done, set state so map can load asynchronously
@@ -41,7 +60,7 @@ class App extends Component {
       query: "brewery",
       ll: "32.713631,-117.155602",
       //near: 'san diego, CA',
-      limit: 12,
+      limit: 1,
       v: '20181011',
     }
     
@@ -57,30 +76,35 @@ class App extends Component {
       .catch(error => {
         alert(`There was an error with Foursquare Venue Data`)
         console.log("FourSquare Venue Error " + error)
-    })
+    })//.then(this.foursquarePhotos())
   }
 
-  //this is work in progress to add photos to infowindow at a later date
-  //not called so non-funtional and not part of project requirement
+  //get photos for venue by looping through all locations
   foursquarePhotos = () => {
-    const endpoint = "https://api.foursquare.com/v2/venues/4c422b9caf052d7f9b8e7e79/photos?"
+    this.state.locationNames.map(location => {
+    const photoID = location.venue.id
+    //const photoID = "40e0b100f964a52052021fe3"
+    const endpoint = "https://api.foursquare.com/v2/venues/"
     const params = {
       client_id: "4GEVXOTWI0JXY51A0DS1K5CA3TCC5YWKEOTRMEYEGE2JO1CJ",
       client_secret: "SBCF5FNWEE1XHCHOQINY0T2U3UAUYYQSFOMD0GZ5VAGTDRBX",
       v: '20181011',
     }
     
-    axios.get(endpoint + new URLSearchParams(params))
+    axios.get(endpoint + photoID + "/photos?" + new URLSearchParams(params))
       .then(response => {
         this.setState({
           locationPhoto: response.data,
+          fourSquarePhotosReady: true,
         })
+        this.state.locationPhotos.push(this.state.locationPhoto)
       })
       .catch(error => {
         alert("There was an error with Foursquare photo data. Error: " + error)
       })
+    })
   }
-  
+
   //initialize map
   initMap = () => {
     const map = new window.google.maps.Map(this.refs.map, {
@@ -139,7 +163,7 @@ class App extends Component {
 //https://www.codementor.io/thomastuts/integrate-google-maps-api-react-refs-du10842zd
 
   render() {
-    //console.log({...this.state})
+    console.log({...this.state})
     return (
       <Fragment>
         <div className = "App">
