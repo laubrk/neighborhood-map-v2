@@ -10,10 +10,10 @@ class App extends Component {
     this.state = {
       locationNames: [],
       locationPhotos:[],
+      locationDetails:[],
       fourSquareReady: false,
       fourSquarePhotosReady: false, //new
       markers: [],
-      infoWindows:[],
       menuOpen: true
     }
   }
@@ -21,34 +21,15 @@ class App extends Component {
   //when component loads, run foursquare API to get locations
   componentDidMount() {
     this.foursquareLocations()
-    //this.foursquarePhotos() //coded out for later work
   }
-  
-  
+ 
   //only after component updated and foursquare locations obtained, based on state change, create the map
   componentDidUpdate(prevProps,prevState) {
-    if (prevState.fourSquareReady !==this.state.fourSquareReady){
+    if (prevState.fourSquarePhotosReady !== this.state.fourSquarePhotosReady) {
       this.initMap()
-      this.foursquarePhotos()
-    }
-  
-  /*  
-    if (prevState.fourSquarePhotosReady !==this.state.fourSquarePhotosReady){
-      this.initMap()
-      //this.foursquarePhotos()
-  }
-  */
-  }
-  
-  /*
-  componentDidUpdate(prevProps,prevState) {
-    if (prevProps.fourSquarePhotosReady !==this.state.fourSquarePhotosReady){
-      this.initMap()
-      //this.foursquarePhotos()
     }
   }
-  */
-  
+
   //call foursquare api using axios and get locations
   //when done, set state so map can load asynchronously
   //approach inspired by https://www.youtube.com/watch?v=dAhMIF0fNpo&index=4&list=PLgOB68PvvmWCGNn8UMTpcfQEiITzxEEA1&t=0s
@@ -60,8 +41,8 @@ class App extends Component {
       query: "brewery",
       ll: "32.713631,-117.155602",
       //near: 'san diego, CA',
-      limit: 1,
-      v: '20181011',
+      limit: 3,
+      v: '20181030',
     }
     
     //use axios to request foursquare data
@@ -72,46 +53,86 @@ class App extends Component {
           fourSquareReady: true,
         })
           //console.log("FourSquare Done: "+this.state.fourSquareReady)
-    })
+      })
+      .then(()=>{
+        this.foursquarePhotos()
+      })
       .catch(error => {
-        alert(`There was an error with Foursquare Venue Data`)
-        console.log("FourSquare Venue Error " + error)
-    })//.then(this.foursquarePhotos())
+        alert("There was an error with Foursquare Venue Data\n" + error)
+      })
   }
 
   //get photos for venue by looping through all locations
   foursquarePhotos = () => {
-    this.state.locationNames.map(location => {
-    const photoID = location.venue.id
-    //const photoID = "40e0b100f964a52052021fe3"
+    this.state.locationNames.map((location) => {
     const endpoint = "https://api.foursquare.com/v2/venues/"
     const params = {
       client_id: "4GEVXOTWI0JXY51A0DS1K5CA3TCC5YWKEOTRMEYEGE2JO1CJ",
       client_secret: "SBCF5FNWEE1XHCHOQINY0T2U3UAUYYQSFOMD0GZ5VAGTDRBX",
-      v: '20181011',
+      v: '20181030',
     }
-    
-    axios.get(endpoint + photoID + "/photos?" + new URLSearchParams(params))
+
+    axios.get(endpoint + location.venue.id + "/photos?" + new URLSearchParams(params))
       .then(response => {
         this.setState({
-          locationPhoto: response.data,
-          fourSquarePhotosReady: true,
+          locationPhoto: response.data.response.photos.items[0],
         })
+      })
+      .then(() => {
+        location.testPhoto=new Object
+        Object.assign(location.testPhoto, this.state.locationPhoto)
+
         this.state.locationPhotos.push(this.state.locationPhoto)
+      /*
+        location.newPhoto=new Array
+        location.newPhoto.push(this.state.locationPhoto)
+        this.state.locationPhotos.push(this.state.locationPhoto)
+        */
+      })
+      
+      .then(() => {
+        if (this.state.locationPhotos.length === 3) {
+          this.setState ({
+          fourSquarePhotosReady: true
+          })
+        this.foursquareDetails()
+        }
       })
       .catch(error => {
-        alert("There was an error with Foursquare photo data. Error: " + error)
+        alert("There was an error with Foursquare photo data.\n" + error)
+        console.log("photo error here")
       })
     })
   }
+  
+  //get details for venue by looping through all locations
+  foursquareDetails = () => {
+    this.state.locationNames.map((location) => {
+    const endpoint = "https://api.foursquare.com/v2/venues/"
+    const params = {
+      client_id: "4GEVXOTWI0JXY51A0DS1K5CA3TCC5YWKEOTRMEYEGE2JO1CJ",
+      client_secret: "SBCF5FNWEE1XHCHOQINY0T2U3UAUYYQSFOMD0GZ5VAGTDRBX",
+      v: '20181030',
+    }
 
+    axios.get(endpoint + location.venue.id + "/?" + new URLSearchParams(params))
+      .then(response => {
+        this.setState({
+          locationDetails: response.data.response.venue,
+        })
+      })
+      .then(() => {this.setState({fourSquarePhotosReady: true})
+    })
+  })
+  }
+  
   //initialize map
   initMap = () => {
     const map = new window.google.maps.Map(this.refs.map, {
       center: {lat: 32.713631, lng: -117.155602},
       zoom: 15
     });
-
+    
     //console log testing for asynch loading issues
     //console.log("Map Loading: "+this.state.fourSquareReady)
 
@@ -126,7 +147,9 @@ class App extends Component {
         formattedAddress: location.venue.location.formattedAddress,
         animation: window.google.maps.Animation.DROP,
         isOpen: false,
-        isVisible: true
+        isVisible: true,
+        photo: location.testPhoto.prefix+`width200`+location.testPhoto.suffix
+        //photo: location.newPhoto[0].prefix+`width200`+location.newPhoto[0].suffix
       });
 
       this.state.markers.push(marker)
@@ -138,7 +161,9 @@ class App extends Component {
           `<h1>${marker.title}</h1>`+
           `<p>${marker.formattedAddress[0]}</p>`+
           `<p>${marker.formattedAddress[1]}</p>`+
-          `</div>`,
+          `<br>`+
+          `</div>`+
+          `<p id="infoWindowImage"><img src="${marker.photo}"/></p>`,
         maxWidth: 300
       });
 
@@ -155,15 +180,14 @@ class App extends Component {
           marker.infoWindow.close(map,marker);
         });
       }
-
-    });
+    })
   }
 
 //approach on creating map in component:
 //https://www.codementor.io/thomastuts/integrate-google-maps-api-react-refs-du10842zd
 
   render() {
-    console.log({...this.state})
+    //console.log({...this.state});
     return (
       <Fragment>
         <div className = "App">

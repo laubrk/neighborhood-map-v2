@@ -42,8 +42,13 @@ footer {
 }
 
 #infoWindow p {
-  font-size: 14px;
+  font-size: 16px;
   margin: 2px;
+  font-weight: 400;
+}
+
+#infoWindowImage {
+  margin: auto;
 }
 
 /* Styles for page heading area */

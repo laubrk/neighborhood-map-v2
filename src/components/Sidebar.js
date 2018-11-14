@@ -65,14 +65,13 @@ class Sidebar extends Component {
   
   menuToggle = () => {
     this.setState({menuOpen: !this.state.menuOpen})
-    console.log("state: "+this.state.menuOpen);
+    //console.log("state: "+this.state.menuOpen);
   }
   
   render() {
-    
+    console.log({...this.props})
     let navBarStyle = {width:this.state.menuOpen ? "325px" : "0"}
     let navClassName = this.state.menuOpen ? "fa fa-bars" : "fa fa-close"
-    
     return (
       <div>
           <header className ="navbar">
@@ -95,7 +94,7 @@ class Sidebar extends Component {
           <input
             type={"search"}
             id={"search"}
-            placeholder={"Search by Name"}
+            placeholder={"Filter Locations Below"}
             role={"search"}
             aria-label={"searchfield"}
             value={this.state.value}
@@ -138,10 +137,20 @@ class Sidebar extends Component {
                   <p>
                     {location.venue.location.formattedAddress[1]}
                   </p>
+                  {/*} {location.testPhoto.id}
+                  <p>{location.testPhoto.prefix+`width200`+location.testPhoto.suffix}
+                  {location.newPhoto[0].prefix+`width200`+location.newPhoto[0].suffix}
+                  </p>
+                  */}
                 </div>
               </li>
               ))
             }
+            
+          {/*}
+            {this.props.locationNames.map(location => (<li>{location.testPhoto.id}</li>))}
+          */}
+          
           </ol>
         </div>
       </div>
